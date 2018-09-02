@@ -119,7 +119,7 @@ if __name__ == '__main__':
   # export to svg file :)
   # it should be program using JINJA but i am lazy now
   figure.write('<?xml version="1.0" encoding="UTF-8" ?>\n')
-  figure.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1">\n')
+  figure.write('<svg width="'+str(text_w*2+stick_w*2+box_w+10)+'" height="'+str(80+height)+'" xmlns="http://www.w3.org/2000/svg" version="1.1">\n')
   figure.write('<text x="10" y="'+str(text_h)+'" fill="black"> Module: '+str(module_label)+'</text>\n')
   figure.write('  <rect x="'+str(text_w+stick_w)+'" y="50" width="'+str(box_w)+'" height="'+str(height)+'" fill="white" stroke-width="1" stroke="black" />\n')
   # figure.write('  <line x1="50" y1="50" x2="200" y2="200" stroke="black" stroke-width="1" />\n')
@@ -142,6 +142,7 @@ if __name__ == '__main__':
       figure.write('  <line x1="'+str(text_w+stick_w+box_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w+box_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="8" />\n')
     y_cor = y_cor + text_h
   figure.write('</svg>')
+  figure.close()
 
 
 
