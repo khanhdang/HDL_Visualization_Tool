@@ -95,9 +95,9 @@ if __name__ == '__main__':
             line = re.sub(l.group('label'),'',line); #remove signal from the line
             l = re.search('(?P<label>'+signal_name+')', line); # match the label
   print module_label
-  print len(parameter_dict)
-  print len(input_dict)
-  print len(output_dict)
+  print parameter_dict
+  print input_dict
+  print output_dict
   table = open(module_label+'_tab.csv', 'w')
   table.write('type, label , value\n')
   for k in parameter_dict.keys():
@@ -109,6 +109,39 @@ if __name__ == '__main__':
     table.write('output,'+k+','+str(output_dict[k])+'\n')
   hdl.close()
   table.close()
+
+  text_h = 30
+  text_w = 100
+  stick_w = 30
+  box_w = 200
+  height = (max(len(input_dict), len(output_dict))+1)*text_h
+  figure = open(module_label+'.svg', 'w')
+  # export to svg file :)
+  # it should be program using JINJA but i am lazy now
+  figure.write('<?xml version="1.0" encoding="UTF-8" ?>\n')
+  figure.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1">\n')
+  figure.write('<text x="10" y="'+str(text_h)+'" fill="black"> Module: '+str(module_label)+'</text>\n')
+  figure.write('  <rect x="'+str(text_w+stick_w)+'" y="50" width="'+str(box_w)+'" height="'+str(height)+'" fill="white" stroke-width="1" stroke="black" />\n')
+  # figure.write('  <line x1="50" y1="50" x2="200" y2="200" stroke="black" stroke-width="1" />\n')
+  y_cor = 50+text_h
+  for k in input_dict.keys():
+    figure.write('<text x="10" y="'+str(y_cor)+'" fill="black" style="text-anchor:right" >'+str(k)+'</text>\n')
+    if input_dict[k] == 1:
+      figure.write('  <line x1="'+str(text_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="1" />\n')
+    else:
+      figure.write('  <line x1="'+str(text_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="8" />\n')
+    if 'clk' in k or 'clock' in k:
+      figure.write('  <polygon points="'+str(text_w+stick_w)+','+str(y_cor-text_h/3)+' '+str(text_w+stick_w)+','+str(y_cor+text_h/3)+' '+str(text_w+stick_w+text_h/3)+','+str(y_cor)+'" stroke="black" fill="white" stroke-width="1" />\n')
+    y_cor = y_cor + text_h
+  y_cor = 50+text_h
+  for k in output_dict.keys():
+    figure.write('<text x="400" y="'+str(y_cor)+'" fill="black" style="text-anchor:right" >'+str(k)+'</text>\n')
+    if output_dict[k] == 1:
+      figure.write('  <line x1="'+str(text_w+stick_w+box_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w+box_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="1" />\n')
+    else:
+      figure.write('  <line x1="'+str(text_w+stick_w+box_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w+box_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="8" />\n')
+    y_cor = y_cor + text_h
+  figure.write('</svg>')
 
 
 
