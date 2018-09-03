@@ -8,6 +8,7 @@ This tool reads a HDL file then export:
 
 Note: current version only supports Verilog 2004
 
+
 # Install
 
 1. Python
@@ -15,6 +16,11 @@ Note: current version only supports Verilog 2004
 
 ```
 pip install svglib
+```
+
+Download from this link:
+```
+https://github.com/khanhdang/HDL_Visualization_Tool/releases
 ```
 
 # Run
