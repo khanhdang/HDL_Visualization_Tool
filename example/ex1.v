@@ -6,7 +6,7 @@
 *            2016.01.16: RAB, BLoD, SER, ECC, LAFT are completed
 */
 
-module TWOD_PPC_enc_4_4(
+module ex1(
   clk,
   reset,
   nack,

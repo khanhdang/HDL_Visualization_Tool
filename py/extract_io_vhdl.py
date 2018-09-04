@@ -6,12 +6,13 @@ import pdb; # for debugging
 # regex definition
 whitespace_at_begin = '^(\s)*'
 signal_name = '[a-zA-Z0-9_\\\\\[\]\.\/]+'
-parameter_label = whitespace_at_begin+'parameter'
-input_label = whitespace_at_begin+'input'
-output_label = whitespace_at_begin+'output'
+parameter_label = whitespace_at_begin+'generic\s*\('
+port_label = whitespace_at_begin+'port\s*\('
+input_label = whitespace_at_begin+signal_name+'\s*:\s*in'
+output_label = whitespace_at_begin+signal_name+'\s*:\sout'
 always_process = whitespace_at_begin+'always(\s)*@(\s)*\(.*\)'
-MODULE_START = whitespace_at_begin+'module'
-MODULE_END = whitespace_at_begin+'endmodule'
+MODULE_START = whitespace_at_begin+'entity'
+MODULE_END = whitespace_at_begin+'end\s+'+signal_name+'\;'
 
 module_declare = MODULE_START+'\s*'+signal_name
 
@@ -25,6 +26,7 @@ def module_cutter(lines):
         if module_append:
             module.append(line)
         if re.match(MODULE_END,line):
+
             return module
     return module
 
@@ -32,81 +34,90 @@ module_label =''
 parameter_dict = {}
 input_dict = {}
 output_dict = {}
+p_name = ''
+out = ''
 if __name__ == '__main__':
     hdl = open(sys.argv[1], 'r')
+
     # svg = open(sys.argv[2], 'w')
     module = module_cutter(hdl);
+    # print module
+    read_mode = ''
     for line in module:
+        l = line.split('--')
+        line = l[0]
+        # print line
         if re.match(module_declare, line):
             line = re.sub(MODULE_START,'',line); #remove module from the line
             label = re.search('(?P<label>'+signal_name+')', line); # match the label
             if (label):
                 module_label=label.group('label')
+                #print module_label
+                table = open(module_label+'_tab.csv', 'w')
+                table.write('type, label , index high, index low, data type,  init value\n')
             else:
                 print "Failed: cannot find the label"
         if (re.match(parameter_label, line)):
-            line = re.sub(parameter_label,'',line); #remove module from the line
-            p = re.search('(?P<label>'+signal_name+')', line); # match the label
-            if (p):
-                line = re.sub(p.group('label'),'',line); #remove module from the line
-            v = re.search('(?P<num>[0-9]+)', line); # match the label
-            if (v):
-                line = re.sub(v.group('num'),'',line); #remove module from the line
-            parameter_dict[p.group('label')] = v.group('num')
+            read_mode = 'generic'
+            #print "reading generic.."
+        elif (re.match(port_label, line)):
+            read_mode = 'port'
+            #print line
+            #print "reading port..."
+        if read_mode == 'generic':
+            p = line.split(':'); # split the line
+            if (len(p)>1):
+                p_name = re.search('(?P<label>'+signal_name+')', p[0]); # match the label
+                #print p_name.group('label')
+                p_dt = re.search(signal_name, p[1])
 
-        if (re.match(input_label, line)):
-            line = re.sub(input_label,'',line); #remove module from the line
-            p = re.search('(?P<label>\[.*:.*\])', line); # match the width
-            if (p):
-                w = p.group('label');
-                w = re.sub('\[','',w)
-                w = re.sub('\]','',w)
-                wx= w.split(':')
-                if wx[1] == '0':
-                    w = re.sub('-1','',wx[0])
-                line = re.sub('\[.*:.*\]','',line); #remove width from the line
-                l = re.search('(?P<label>'+signal_name+')', line); # match the label
-                input_dict[l.group('label')] = w; #p.group('label')
-            else:
-                l = re.search('(?P<label>'+signal_name+')', line); # match the label
-                while (l):
-                    input_dict[l.group('label')] = 1
-                    line = re.sub(l.group('label'),'',line); #remove signal from the line
-                    l = re.search('(?P<label>'+signal_name+')', line); # match the label
-        if (re.match(output_label, line)):
-            if 'reg' in line:
-                line = re.sub('reg','', line)
-            line = re.sub(output_label,'',line); #remove module from the line
-            p = re.search('(?P<label>\[.*:.*\])', line); # match the width
-            if (p):
-                w = p.group('label');
-                w = re.sub('\[','',w)
-                w = re.sub('\]','',w)
-                wx= w.split(':')
-                if wx[1] == '0':
-                    w = re.sub('-1','',wx[0])
-                line = re.sub('\[.*:.*\]','',line); #remove width from the line
-                l = re.search('(?P<label>'+signal_name+')', line); # match the label
-                output_dict[l.group('label')] =  w; #p.group('label')
-            else:
-                l = re.search('(?P<label>'+signal_name+')', line); # match the label
-                while (l):
-                    output_dict[l.group('label')] = 1
-                    line = re.sub(l.group('label'),'',line); #remove signal from the line
-                    l = re.search('(?P<label>'+signal_name+')', line); # match the label
-    print module_label
-    print parameter_dict
+                p_type = re.search('(?P<label>\(\s*[0-9]+\s*[a-z]+\s*[0-9]+\s*\))', p[1]); # match the label
+                index = re.findall('[0-9]+',p_type.group('label'))
+                #print index
+            if (len(p)>2):
+                p_val = re.search('\"*[0-9a-zA-Z]+\"*', p[2]);
+                #print p_val.group(0)
+            if (len(p)>1):
+                out = 'parameter,'+p_name.group('label')+','+index[0]+','+index[1]+','+p_dt.group(0)+','+p_val.group(0)+'\n'
+                table.write(out)
+        elif read_mode == 'port':
+            if (re.match(input_label, line)):
+                # print line
+                n = re.search(signal_name, line)
+                out = 'input' + ',' + n.group(0)
+                line = re.sub(input_label,'',line); #remove module from the line
+                p = re.search('(?P<label>\(\s*[0-9]+\s*[a-z]+\s*[0-9]+\s*\))', line); # match the width
+                if (p):
+                    index = re.findall('[0-9]+',p.group('label'))
+                else:
+                    index = [0, 0]
+                out = out + ',' + str(index[0]) + ',' + str(index[1])
+
+                p = re.search(signal_name, line)
+                out = out + ','+ p.group(0) +'\n'
+                # print out
+                table.write(out)
+                input_dict[n.group(0)] = int(index[0])+1-int(index[1])
+            if (re.match(output_label, line)):
+                #print line
+                n = re.search(signal_name, line)
+                out = 'output' + ',' + n.group(0)
+                line = re.sub(output_label,'',line); #remove module from the line
+                p = re.search('(?P<label>\(\s*[0-9]+\s*[a-z]+\s*[0-9]+\s*\))', line); # match the width
+                if (p):
+                    index = re.findall('[0-9]+',p.group('label'))
+                else:
+                    index = [0, 0]
+                out = out + ',' + str(index[0]) + ',' + str(index[1])
+
+                p = re.search(signal_name, line)
+                out = out + ','+ p.group(0) +'\n'
+                print out
+                table.write(out)
+                output_dict[n.group(0)] = int(index[0])+1-int(index[1])
     print input_dict
     print output_dict
-    table = open(module_label+'_tab.csv', 'w')
-    table.write('type, label , value\n')
-    for k in parameter_dict.keys():
-        table.write('parameter,'+k+','+parameter_dict[k]+'\n')
-    table.write('type, name , width/index\n')
-    for k in input_dict.keys():
-        table.write('input,'+k+','+str(input_dict[k])+'\n')
-    for k in output_dict.keys():
-        table.write('output,'+k+','+str(output_dict[k])+'\n')
+
     hdl.close()
     table.close()
 
