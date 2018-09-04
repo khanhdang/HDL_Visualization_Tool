@@ -1,6 +1,7 @@
 import re; # regular expression
 import sys; # supporting I/O access
 import pdb; # for debugging
+import math
 
 
 # regex definition
@@ -112,21 +113,24 @@ if __name__ == '__main__':
 
                 p = re.search(signal_name, line)
                 out = out + ','+ p.group(0) +'\n'
-                print out
+                # print out
                 table.write(out)
                 output_dict[n.group(0)] = int(index[0])+1-int(index[1])
     print input_dict
     print output_dict
-
+    m1 = max(input_dict, key=input_dict.get)
+    m2 = max(output_dict, key=output_dict.get)
+    m = float(max (input_dict[m1], output_dict[m2]))
     hdl.close()
     table.close()
 
     text_h = 30
-    text_w = 100
+    text_w = 120
     stick_w = 30
     box_w = 200
     height = (max(len(input_dict), len(output_dict))+1)*text_h
     figure = open(module_label+'.svg', 'w')
+
     # export to svg file :)
     # it should be program using JINJA but i am lazy now
     figure.write('<?xml version="1.0" encoding="UTF-8" ?>\n')
@@ -140,17 +144,17 @@ if __name__ == '__main__':
         if input_dict[k] == 1:
             figure.write('  <line x1="'+str(text_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="1" />\n')
         else:
-            figure.write('  <line x1="'+str(text_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="8" />\n')
+            figure.write('  <line x1="'+str(text_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="'+str(math.ceil(int(input_dict[k])*8.0/m))+'" />\n')
         if 'clk' in k or 'clock' in k:
             figure.write('  <polygon points="'+str(text_w+stick_w)+','+str(y_cor-text_h/3)+' '+str(text_w+stick_w)+','+str(y_cor+text_h/3)+' '+str(text_w+stick_w+text_h/3)+','+str(y_cor)+'" stroke="black" fill="white" stroke-width="1" />\n')
         y_cor = y_cor + text_h
     y_cor = 50+text_h
     for k in output_dict.keys():
-        figure.write('<text x="400" y="'+str(y_cor)+'" fill="black" style="text-anchor:right" >'+str(k)+'</text>\n')
+        figure.write('<text x="'+str(text_w+stick_w*2+box_w + 20)+'" y="'+str(y_cor)+'" fill="black" style="text-anchor:right" >'+str(k)+'</text>\n')
         if output_dict[k] == 1:
             figure.write('  <line x1="'+str(text_w+stick_w+box_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w+box_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="1" />\n')
         else:
-            figure.write('  <line x1="'+str(text_w+stick_w+box_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w+box_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="8" />\n')
+            figure.write('  <line x1="'+str(text_w+stick_w+box_w)+'" y1="'+str(y_cor)+'" x2="'+str(text_w+stick_w+box_w+stick_w)+'" y2="'+str(y_cor)+'" stroke="black" stroke-width="'+str(math.ceil(int(output_dict[k])*8.0/m))+'" />\n')
         y_cor = y_cor + text_h
     figure.write('</svg>')
     figure.close()
